@@ -66,6 +66,7 @@ export default function ClientsScreen() {
       key: 'balance',
       header: 'Saldo',
       sortKey: 'balance_tokens',
+      width: 1.2,
       align: 'right',
       render: (c) =>
         c.balance_tokens > 0 ? (
@@ -98,6 +99,7 @@ export default function ClientsScreen() {
       key: 'last',
       header: 'Último lavado',
       sortKey: 'last_wash_at',
+      width: 1.4,
       align: 'right',
       render: (c) => <CellText muted>{formatRelative(c.last_wash_at)}</CellText>,
     },

@@ -1,0 +1,71 @@
+name: Deploy backoffice
+
+# Manual, mirroring fullwash-backend's staging.yaml and production.yaml. Nothing in this
+# org deploys on push, and a backoffice is not the place to start.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        type: choice
+        options: [staging, prod]
+        default: staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Both run before the build: a type error or a broken helper should stop the
+      # deploy, not ship.
+      - run: npm run typecheck
+      - run: npm test
+
+      - name: Build
+        env:
+          APP_ENV: ${{ inputs.environment }}
+          EXPO_PUBLIC_FIREBASE_API_KEY: ${{ secrets.EXPO_PUBLIC_FIREBASE_API_KEY }}
+          EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          EXPO_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.EXPO_PUBLIC_FIREBASE_PROJECT_ID }}
+          EXPO_PUBLIC_FIREBASE_APP_ID: ${{ secrets.EXPO_PUBLIC_FIREBASE_APP_ID }}
+          EXPO_PUBLIC_FIREBASE_SENDER_ID: ${{ secrets.EXPO_PUBLIC_FIREBASE_SENDER_ID }}
+        run: npm run build
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Upload hashed assets
+        # Long cache: every bundle filename contains a content hash, so a changed file is
+        # a new URL and a stale one is never wrong.
+        run: |
+          aws s3 sync dist/ "s3://fullwash-backoffice-${{ inputs.environment }}/" \
+            --delete \
+            --exclude index.html \
+            --cache-control "public,max-age=31536000,immutable"
+
+      - name: Upload index.html
+        # Last, and uncached: it is the file that names which bundles to load, so it must
+        # never point at objects that are not uploaded yet, and must never be served stale.
+        run: |
+          aws s3 cp dist/index.html "s3://fullwash-backoffice-${{ inputs.environment }}/index.html" \
+            --cache-control "no-cache,must-revalidate"
+
+      - name: Invalidate index.html at the edge
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}" \
+            --paths "/index.html" "/"

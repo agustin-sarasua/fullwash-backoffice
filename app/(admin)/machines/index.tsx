@@ -84,6 +84,7 @@ export default function MachinesScreen() {
     {
       key: 'revenue',
       header: 'Ingreso est.',
+      width: 1.3,
       align: 'right',
       render: (m) => <CellText>{formatCurrency(m.metrics.estimated_revenue_uyu)}</CellText>,
     },
@@ -91,6 +92,7 @@ export default function MachinesScreen() {
       key: 'last',
       header: 'Último lavado',
       sortKey: 'last_wash_at',
+      width: 1.4,
       align: 'right',
       render: (m) => <CellText muted>{formatRelative(m.metrics.last_wash_at)}</CellText>,
     },

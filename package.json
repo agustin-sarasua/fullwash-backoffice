@@ -6,7 +6,7 @@
   "scripts": {
     "start": "expo start --web",
     "web": "expo start --web",
-    "build": "expo export -p web",
+    "build": "expo export -p web --clear",
     "typecheck": "tsc --noEmit",
     "test": "node --test --experimental-strip-types src/format.test.ts src/api/query.test.ts"
   },

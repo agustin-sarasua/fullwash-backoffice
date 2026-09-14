@@ -213,7 +213,9 @@ const s = StyleSheet.create({
   buttonPrimary: { backgroundColor: colors.primary },
   buttonSecondary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderStrong },
   buttonDanger: { backgroundColor: colors.danger },
-  buttonGhost: { backgroundColor: 'transparent' },
+  // A ghost button reads as a text link, so it hugs its label instead of stretching
+  // to the width of whatever container it lands in.
+  buttonGhost: { backgroundColor: 'transparent', alignSelf: 'flex-start', paddingHorizontal: 0 },
   buttonPressed: { opacity: 0.85 },
   buttonDisabled: { opacity: 0.5 },
   buttonText: { color: colors.textInverse, fontWeight: weight.semibold, fontSize: font.md },

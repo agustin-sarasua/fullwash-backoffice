@@ -40,8 +40,16 @@ export function Table<T>({
   return (
     // A data table cannot be made narrow enough for a phone without becoming unreadable,
     // so it scrolls sideways inside its own container rather than forcing the page to.
-    <ScrollView horizontal showsHorizontalScrollIndicator style={s.scroller}>
-      <View style={[s.table, { minWidth }]}>
+    // contentContainerStyle carries flexGrow, not the ScrollView's own style: without it
+    // the content sizes to minWidth and the table stops short of the available width on
+    // a desktop screen, which is where this is actually used.
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator
+      style={s.scroller}
+      contentContainerStyle={{ flexGrow: 1, minWidth }}
+    >
+      <View style={[s.table, { flex: 1 }]}>
         <View style={s.headerRow}>
           {columns.map((column) => {
             const sortable = Boolean(column.sortKey && onSort);
