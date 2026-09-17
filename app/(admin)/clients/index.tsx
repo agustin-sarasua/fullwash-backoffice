@@ -4,12 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 
 import { adminApi } from '@/api/endpoints';
-import type { Client, SortDir } from '@/api/types';
+import type { Client, ClientProvider, SortDir } from '@/api/types';
 import { CellText, Pagination, Table, type Column } from '@/components/Table';
 import {
   Badge,
   Button,
   Card,
+  ClientTypeBadge,
   EmptyState,
   ErrorState,
   Field,
@@ -19,7 +20,7 @@ import {
   Muted,
   Row,
 } from '@/components/ui';
-import { formatCurrency, formatNumber, formatRelative, formatTokens } from '@/format';
+import { formatCurrency, formatDate, formatNumber, formatRelative, formatTokens } from '@/format';
 import { toggleSort, useSites } from '@/hooks/useAdminQuery';
 import { space } from '@/theme';
 
@@ -29,6 +30,7 @@ export default function ClientsScreen() {
   const [q, setQ] = useState('');
   const [siteId, setSiteId] = useState<number | undefined>(undefined);
   const [inactiveDays, setInactiveDays] = useState<number | undefined>(undefined);
+  const [provider, setProvider] = useState<ClientProvider | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<{ sortBy: string; sortDir: SortDir }>({
     sortBy: 'last_wash_at',
@@ -36,12 +38,13 @@ export default function ClientsScreen() {
   });
 
   const query = useQuery({
-    queryKey: ['clients', { q, siteId, inactiveDays, page, ...sort }],
+    queryKey: ['clients', { q, siteId, inactiveDays, provider, page, ...sort }],
     queryFn: () =>
       adminApi.listClients({
         q: q || undefined,
         site_id: siteId,
         inactive_days: inactiveDays,
+        provider,
         page,
         page_size: 25,
         sort_by: sort.sortBy,
@@ -57,7 +60,12 @@ export default function ClientsScreen() {
       sortKey: 'name',
       render: (c) => (
         <View style={{ gap: 2 }}>
-          <CellText strong>{c.name || 'Sin nombre'}</CellText>
+          <Row gap={space.xs} align="center">
+            {/* An anonymous guest has no name or email of their own, so the fallbacks
+                below show their uid -- the badge is what explains why. */}
+            <CellText strong>{c.name || 'Sin nombre'}</CellText>
+            <ClientTypeBadge isAnonymous={c.is_anonymous} />
+          </Row>
           <CellText muted>{c.email || c.user_id}</CellText>
         </View>
       ),
@@ -94,6 +102,16 @@ export default function ClientsScreen() {
       header: 'Local habitual',
       width: 1.4,
       render: (c) => <CellText muted>{c.home_site?.name ?? '—'}</CellText>,
+    },
+    {
+      key: 'created',
+      header: 'Alta',
+      sortKey: 'created_at',
+      width: 1.2,
+      align: 'right',
+      // formatDate already renders '—' for null, which is the right thing here: the
+      // date is unknown, not absent.
+      render: (c) => <CellText muted>{formatDate(c.created_at)}</CellText>,
     },
     {
       key: 'last',
@@ -144,6 +162,34 @@ export default function ClientsScreen() {
               ))}
             </Row>
           </Field>
+          <Field label="Tipo">
+            <Row gap={space.xs}>
+              <FilterChip
+                label="Todos"
+                active={provider === undefined}
+                onPress={() => { setProvider(undefined); resetPage(); }}
+              />
+              {(
+                [
+                  ['registered', 'Registrados'],
+                  ['anonymous', 'Anónimos'],
+                  // Rows not yet reconciled against Firebase. Surfaced rather than
+                  // hidden so an operator can see how much is still unknown.
+                  ['unknown', 'Sin dato'],
+                ] as [ClientProvider, string][]
+              ).map(([value, label]) => (
+                <FilterChip
+                  key={value}
+                  label={label}
+                  active={provider === value}
+                  onPress={() => {
+                    setProvider(provider === value ? undefined : value);
+                    resetPage();
+                  }}
+                />
+              ))}
+            </Row>
+          </Field>
           <Field label="Inactividad">
             <Row gap={space.xs}>
               {[30, 60, 90].map((days) => (
@@ -181,7 +227,7 @@ export default function ClientsScreen() {
               setSort((current) => toggleSort(key, current));
               resetPage();
             }}
-            minWidth={880}
+            minWidth={1040}
           />
           <Pagination
             page={data.page}

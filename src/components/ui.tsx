@@ -160,6 +160,20 @@ export function Badge({
   );
 }
 
+/**
+ * Three-state on purpose. `is_anonymous` is null -- not false -- for a row that has not
+ * been reconciled against Firebase, and rendering nothing for that case would show an
+ * unknown client as if it were registered. See Client.is_anonymous.
+ */
+export function ClientTypeBadge({ isAnonymous }: { isAnonymous: boolean | null | undefined }) {
+  if (isAnonymous === false) return null;
+  return isAnonymous === true ? (
+    <Badge label="Anónimo" tone="warning" />
+  ) : (
+    <Badge label="Sin dato" tone="neutral" />
+  );
+}
+
 // --- states ----------------------------------------------------------------------
 
 export function Loading({ label = 'Loading…' }: { label?: string }) {

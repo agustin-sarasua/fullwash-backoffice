@@ -6,6 +6,7 @@ import type {
   CampaignDetail,
   Client,
   ClientDetail,
+  ClientProvider,
   ClientTransaction,
   Grant,
   Machine,
@@ -58,6 +59,9 @@ export const adminApi = {
       min_balance?: number;
       max_balance?: number;
       inactive_days?: number;
+      provider?: ClientProvider;
+      created_from?: string;
+      created_to?: string;
     } = {},
   ) => api.get<Page<Client>>(`/admin/clients${buildQuery(params as Record<string, QueryValue>)}`),
   getClient: (userId: string) =>
