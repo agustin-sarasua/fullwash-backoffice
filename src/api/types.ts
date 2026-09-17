@@ -92,8 +92,16 @@ export type Client = {
   total_spent_uyu: number;
   last_wash_at: string | null;
   last_purchase_at: string | null;
+  /** From Firebase. Null means unreconciled, not new. */
+  created_at: string | null;
+  /** Firebase sign_in_provider, verbatim: "anonymous", "password", "google.com". */
+  auth_provider: string | null;
+  /** Null -- not false -- when the provider is unknown. Do not render as registered. */
+  is_anonymous: boolean | null;
   home_site: IdName | null;
 };
+
+export type ClientProvider = 'anonymous' | 'registered' | 'unknown';
 
 export type Payment = {
   id: number;

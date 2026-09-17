@@ -11,6 +11,7 @@ import {
   Badge,
   Button,
   Card,
+  ClientTypeBadge,
   ErrorState,
   Field,
   Heading,
@@ -21,6 +22,7 @@ import {
 } from '@/components/ui';
 import {
   formatCurrency,
+  formatDate,
   formatDateTime,
   formatNumber,
   formatRelative,
@@ -153,9 +155,18 @@ export default function ClientDetailScreen() {
 
       <Row align="flex-start" style={{ justifyContent: 'space-between' }}>
         <View style={{ gap: space.xs }}>
-          <Heading>{data.name || 'Sin nombre'}</Heading>
+          <Row gap={space.sm} align="center">
+            <Heading>{data.name || 'Sin nombre'}</Heading>
+            <ClientTypeBadge isAnonymous={data.is_anonymous} />
+          </Row>
           <Muted>{data.email || data.user_id}</Muted>
           {data.phone ? <Muted>{data.phone}</Muted> : null}
+          <Muted>
+            Cliente desde {formatDate(data.created_at)}
+            {/* The raw provider, so an operator can tell a Google signup from an email
+                one -- the badge above only answers guest or not. */}
+            {data.auth_provider ? ` · ${data.auth_provider}` : ''}
+          </Muted>
         </View>
         <Button title="Cargar fichas" onPress={() => setGranting(true)} />
       </Row>
